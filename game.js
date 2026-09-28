@@ -1,7 +1,9 @@
-// 游戏入口：棋盘、蛇移动与按键控制已完成，食物与结束判定将在后续提交中补齐
+// 游戏入口：棋盘、移动、食物与计分已完成，结束/暂停/重开将在后续提交中补齐
 (function () {
   const canvas = document.getElementById("game");
   const statusEl = document.getElementById("status");
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best-score");
 
   if (!canvas) {
     return;
@@ -12,6 +14,7 @@
   const ROWS = 20;
   const CELL = canvas.width / COLS;
   const TICK_MS = 140;
+  const BEST_KEY = "greedy-snake-best";
 
   const DIRS = {
     up: { x: 0, y: -1 },
@@ -23,6 +26,9 @@
   let snake = [];
   let direction = DIRS.right;
   let queuedDir = DIRS.right;
+  let food = { x: 12, y: 10 };
+  let score = 0;
+  let bestScore = Number(localStorage.getItem(BEST_KEY) || 0);
   let timerId = null;
 
   function drawBoard() {
@@ -57,9 +63,53 @@
     });
   }
 
+  function drawFood() {
+    drawCell(food.x, food.y, "#f97316");
+  }
+
   function render() {
     drawBoard();
+    drawFood();
     drawSnake();
+  }
+
+  function updateHud() {
+    if (scoreEl) {
+      scoreEl.textContent = String(score);
+    }
+    if (bestEl) {
+      bestEl.textContent = String(bestScore);
+    }
+  }
+
+  function occupies(x, y) {
+    return snake.some(function (part) {
+      return part.x === x && part.y === y;
+    });
+  }
+
+  function placeFood() {
+    const empty = [];
+    for (let y = 0; y < ROWS; y += 1) {
+      for (let x = 0; x < COLS; x += 1) {
+        if (!occupies(x, y)) {
+          empty.push({ x: x, y: y });
+        }
+      }
+    }
+    if (empty.length === 0) {
+      return;
+    }
+    food = empty[Math.floor(Math.random() * empty.length)];
+  }
+
+  function addScore(value) {
+    score += value;
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem(BEST_KEY, String(bestScore));
+    }
+    updateHud();
   }
 
   function resetSnake() {
@@ -70,6 +120,9 @@
     ];
     direction = DIRS.right;
     queuedDir = DIRS.right;
+    score = 0;
+    placeFood();
+    updateHud();
   }
 
   function isOpposite(a, b) {
@@ -100,7 +153,12 @@
     }
 
     snake.unshift(next);
-    snake.pop();
+    if (next.x === food.x && next.y === food.y) {
+      addScore(10);
+      placeFood();
+    } else {
+      snake.pop();
+    }
     render();
   }
 
