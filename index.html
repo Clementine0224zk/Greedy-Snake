@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>贪吃蛇</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>贪吃蛇</h1>
+      <p class="hint">方向键或 WASD 控制，空格暂停，R 重新开始</p>
+    </header>
+
+    <section class="hud">
+      <div class="hud-item">分数 <strong id="score">0</strong></div>
+      <div class="hud-item">最高分 <strong id="best-score">0</strong></div>
+      <div class="hud-item">状态 <strong id="status">准备中</strong></div>
+    </section>
+
+    <canvas id="game" width="480" height="480" aria-label="贪吃蛇棋盘"></canvas>
+
+    <footer class="footer">
+      用浏览器直接打开 index.html 即可试玩
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
