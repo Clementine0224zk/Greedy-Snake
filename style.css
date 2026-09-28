@@ -63,12 +63,42 @@ body {
   font-size: 20px;
 }
 
+.board-wrap {
+  position: relative;
+}
+
 #game {
   display: block;
   width: 100%;
   background: #020617;
   border: 2px solid var(--border);
   border-radius: 12px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.72);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+#overlay-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+#overlay-sub {
+  margin: 0;
+  color: var(--muted);
 }
 
 .footer {

@@ -1,9 +1,12 @@
-// 游戏入口：棋盘、移动、食物与计分已完成，结束/暂停/重开将在后续提交中补齐
+// 游戏入口：棋盘、移动、食物、计分、结束/暂停/重开
 (function () {
   const canvas = document.getElementById("game");
   const statusEl = document.getElementById("status");
   const scoreEl = document.getElementById("score");
   const bestEl = document.getElementById("best-score");
+  const overlayEl = document.getElementById("overlay");
+  const overlayTitleEl = document.getElementById("overlay-title");
+  const overlaySubEl = document.getElementById("overlay-sub");
 
   if (!canvas) {
     return;
@@ -30,6 +33,9 @@
   let score = 0;
   let bestScore = Number(localStorage.getItem(BEST_KEY) || 0);
   let timerId = null;
+  let running = false;
+  let paused = false;
+  let over = false;
 
   function drawBoard() {
     ctx.fillStyle = "#020617";
@@ -82,8 +88,27 @@
     }
   }
 
-  function occupies(x, y) {
-    return snake.some(function (part) {
+  function showOverlay(title, sub) {
+    if (!overlayEl) {
+      return;
+    }
+    overlayTitleEl.textContent = title;
+    overlaySubEl.textContent = sub;
+    overlayEl.classList.remove("hidden");
+  }
+
+  function hideOverlay() {
+    if (overlayEl) {
+      overlayEl.classList.add("hidden");
+    }
+  }
+
+  function occupies(x, y, ignoreTail) {
+    const lastIndex = snake.length - 1;
+    return snake.some(function (part, index) {
+      if (ignoreTail && index === lastIndex) {
+        return false;
+      }
       return part.x === x && part.y === y;
     });
   }
@@ -92,12 +117,13 @@
     const empty = [];
     for (let y = 0; y < ROWS; y += 1) {
       for (let x = 0; x < COLS; x += 1) {
-        if (!occupies(x, y)) {
+        if (!occupies(x, y, false)) {
           empty.push({ x: x, y: y });
         }
       }
     }
     if (empty.length === 0) {
+      food = { x: -1, y: -1 };
       return;
     }
     food = empty[Math.floor(Math.random() * empty.length)];
@@ -133,6 +159,63 @@
     return x >= 0 && x < COLS && y >= 0 && y < ROWS;
   }
 
+  function setStatus(text) {
+    if (statusEl) {
+      statusEl.textContent = text;
+    }
+  }
+
+  function stopLoop() {
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+    running = false;
+  }
+
+  function startLoop() {
+    if (timerId) {
+      clearInterval(timerId);
+    }
+    timerId = setInterval(step, TICK_MS);
+    running = true;
+  }
+
+  function endGame(title) {
+    over = true;
+    paused = false;
+    stopLoop();
+    setStatus("已结束");
+    showOverlay(title, "按 R 重新开始");
+  }
+
+  function startGame() {
+    over = false;
+    paused = false;
+    hideOverlay();
+    resetSnake();
+    render();
+    startLoop();
+    setStatus("进行中");
+  }
+
+  function togglePause() {
+    if (over) {
+      return;
+    }
+    if (!paused) {
+      paused = true;
+      stopLoop();
+      setStatus("已暂停");
+      showOverlay("已暂停", "按空格继续");
+      return;
+    }
+    paused = false;
+    hideOverlay();
+    startLoop();
+    setStatus("进行中");
+  }
+
   function step() {
     if (!isOpposite(direction, queuedDir)) {
       direction = queuedDir;
@@ -144,18 +227,26 @@
       y: head.y + direction.y
     };
 
-    // 撞墙时先停在原地，结束画面会在后续功能中补上
     if (!isInside(next.x, next.y)) {
-      if (statusEl) {
-        statusEl.textContent = "撞墙（结束逻辑待补）";
-      }
+      endGame("撞到墙壁");
+      return;
+    }
+
+    const growing = next.x === food.x && next.y === food.y;
+    if (occupies(next.x, next.y, !growing)) {
+      endGame("撞到自己");
       return;
     }
 
     snake.unshift(next);
-    if (next.x === food.x && next.y === food.y) {
+    if (growing) {
       addScore(10);
       placeFood();
+      if (food.x < 0) {
+        render();
+        endGame("全部吃完了");
+        return;
+      }
     } else {
       snake.pop();
     }
@@ -177,23 +268,23 @@
 
     if (map[key]) {
       event.preventDefault();
-      queuedDir = map[key];
+      if (!over && !paused) {
+        queuedDir = map[key];
+      }
+      return;
+    }
+
+    if (key === " " || key === "spacebar") {
+      event.preventDefault();
+      togglePause();
+      return;
+    }
+
+    if (key === "r") {
+      startGame();
     }
   }
 
-  function startLoop() {
-    if (timerId) {
-      clearInterval(timerId);
-    }
-    timerId = setInterval(step, TICK_MS);
-  }
-
-  resetSnake();
-  render();
-  startLoop();
+  startGame();
   window.addEventListener("keydown", handleKey);
-
-  if (statusEl) {
-    statusEl.textContent = "进行中";
-  }
 })();
