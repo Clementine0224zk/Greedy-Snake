@@ -19,7 +19,13 @@
       <div class="hud-item">状态 <strong id="status">准备中</strong></div>
     </section>
 
-    <canvas id="game" width="480" height="480" aria-label="贪吃蛇棋盘"></canvas>
+    <div class="board-wrap">
+      <canvas id="game" width="480" height="480" aria-label="贪吃蛇棋盘"></canvas>
+      <div id="overlay" class="overlay hidden">
+        <p id="overlay-title">游戏结束</p>
+        <p id="overlay-sub">按 R 重新开始</p>
+      </div>
+    </div>
 
     <footer class="footer">
       用浏览器直接打开 index.html 即可试玩
